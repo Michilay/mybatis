@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.michilay.dao.OrdersMapper">
+
+<!--    定义一个resultMap属性-->
+    <resultMap id="orderMap" type="orders">
+        <id property="id" column="id"/>
+        <result property="orderTime" column="ordertime"/>
+        <result property="total" column="total"/>
+<!--        association配置关联信息
+            association property="user"表示关联的属性
+            javaType="user"-->
+        <association property="user" javaType="user">
+            <id property="userId" column="uid"/>
+            <result property="userName" column="user_name"/>
+            <result property="sex" column="sex"/>
+            <result property="address" column="address"/>
+        </association>
+    </resultMap>
+<!--    关联查询-->
+    <select id="findAllOrdersAndUser" resultMap="orderMap">
+        select  * from orders o
+        left join user u
+        on o.uid = u.user_id
+    </select>
+
+
+    <resultMap id="orderMap1" type="orders">
+        <id property="id" column="id"/>
+        <result property="orderTime" column="ordertime"/>
+        <result property="total" column="total"/>
+        <!--        association配置关联信息
+                    association property="user"表示关联的属性
+                    javaType="user"-->
+        <association property="user" javaType="user" select="com.michilay.dao.UserMapper.findUserByIdqt" column="uid">
+        </association>
+    </resultMap>
+
+    <select id="findAll" resultMap="orderMap1" >
+        select * from orders
+    </select>
+
+    <select id="findOrdersByUid" parameterType="int" resultType="orders">
+        select * from orders where uid = #{userId}
+    </select>
+
+
+</mapper>

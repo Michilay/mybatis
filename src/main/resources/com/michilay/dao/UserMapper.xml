@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.michilay.dao.UserMapper">
+
+    <cache></cache>
+
+    <select id="findUserById" parameterType="int" resultType="User">
+        select * from user where user_id = #{id}
+    </select>
+    <select id="findUserByName" parameterType="String" resultType="User">
+        select * from user where user_name = #{username}
+    </select>
+
+<!--    配置resultMap映射关系,解决表中的字段和类中的属性不一致-->
+    <resultMap id="userResultMap" type="user">
+<!--        id标签：代表的id类的属性和字段的匹配-->
+<!--        result标签:代表普通字段和类的属性匹配-->
+        <id column="user_id" property="userId"/>
+        <result column="user_name" property="userName"/>
+        <result property="birthday" column="birthday"/>
+        <result property="sex" column="sex"/>
+        <result property="address" column="address"/>
+    </resultMap>
+
+
+    <select id="findAll"  resultMap="userResultMap">
+        select * from user
+    </select>
+<!--    模糊查询-->
+<!--    如果传入的参数是基本类型或者是string,那么#后面可以写任意字符
+        #占位符会自动拼接单引号-->
+    <select id="findUser" parameterType="String" resultMap="userResultMap">
+        select * from user where user_name like #{userName}
+    </select>
+<!--    第二种方式-->
+<!--    如果传入的参数是基本类型或者是String，那么只能是value
+        单引号都必须要有，$不会拼接单引号-->
+    <select id="findUser1" parameterType="String" resultMap="userResultMap">
+        select * from user where user_name like '${value}'
+    </select>
+
+<!--    useGeneratedKeys开启获取主键值,keyProperty并将主键值封装到实体中的UserId属性中
+        一般在sql主键自增的情况下，主键不自增不生效-->
+    <insert id="insertUser" parameterType="User" useGeneratedKeys="true" keyProperty="userId">
+        insert into user(user_name,birthday,sex,address) values(#{userName},#{birthday},#{sex},#{address})
+    </insert>
+<!--    selectkey表示获取主键值,keycolumn="id"制定从哪个字段获取值,keyProperty="userId"指定封装到哪个属性中
+        order是指在sql语句之前还是之后执行的-->
+    <insert id="insertUser1" parameterType="User">
+        <selectKey  keyColumn="id" keyProperty="userId" order="AFTER" resultType="int">
+            select LAST_INSERT_ID()
+        </selectKey>
+        insert into user(user_name,birthday,sex,address) values(#{userName},#{birthday},#{sex},#{address})
+    </insert>
+
+
+
+    <delete id="deleteUser" parameterType="User">
+        delete from user where user_id=#{id}
+    </delete>
+
+
+
+<!--    修改 一条数据-->
+<!--    update user set user_name=#{username},birthday=#{birthday},sex=#{sex},address=#{address} where user_id=#{id}-->
+<!--    set动态sql-->
+    <update id="updateUser" parameterType="User" >
+        update user
+        <set>
+            <if test="userName != null">
+                userName = #{userName}
+            </if>
+            <if test="sex != null">
+                sex = #{sex}
+            </if>
+            <if test="birthday != null">
+                birthday = #{birthday}
+            </if>
+            <if test="address != null">
+                address = #{address}
+            </if>
+        </set>
+        where user_id = #{userId}
+    </update>
+
+<!--    注释要放在外面-->
+<!--    多条件查询，不写parameterType-->
+<!--       select * from user where user_id = #{param1} and user_name = #{param2}-->
+    <select id="findUserByIdAndName" resultMap="userResultMap">
+         select * from user where user_id = #{arg0} and user_name = #{arg1}
+
+    </select>
+    <select id="findUserByIdAndName1" resultMap="userResultMap">
+        select * from user where user_id = #{id} and user_name = #{username}
+    </select>
+<!--    不能用map，必须要用userId-->
+    <select id="findUserByIdAndName2" resultMap="userResultMap" parameterType="user">
+        select * from user where user_id = #{userId} and user_name = #{userName}
+    </select>
+
+
+<!--    动态sql查询-->
+    <select id="findAnimateSql" parameterType="user" resultMap="userResultMap">
+
+        select * from user
+        <where>
+            <if test="userName != null">
+                and user_name like concat('%',#{userName},'%')
+            </if>
+            <if test="sex != null">
+                and sex like concat('%', #{sex},'%')
+            </if>
+        </where>
+    </select>
+
+<!--枚举集合查询-->
+    <select id="findManyId" parameterType="integer" resultMap="userResultMap">
+        select * from user
+        <where>
+            <foreach collection="collection" open="user_id in(" close=")" item="id" separator=",">
+                #{id}
+            </foreach>
+        </where>
+    </select>
+
+<!--    数组遍历-->
+    <select id="findManyId1" parameterType="integer" resultMap="userResultMap">
+        <include refid="selectSql"></include>
+        <where>
+            <foreach collection="array" open="user_id in(" close=")" item="id" separator=",">
+                #{id}
+            </foreach>
+        </where>
+    </select>
+    
+    <sql id="selectSql">
+        select * from user
+    </sql>
+
+<!--    配置resultMap属性(多对一-->
+    <resultMap id="userMap" type="user">
+        <id column="user_id" property="userId"/>
+        <result column="user_name" property="userName"/>
+        <result property="birthday" column="birthday"/>
+        <result property="sex" column="sex"/>
+        <result property="address" column="address"/>
+
+        <collection property="listOrders" ofType="orders">
+            <id column="oid" property="id"/>
+            <result column="ordertime" property="orderTime"/>
+            <result column="total" property="total"/>
+        </collection>
+    </resultMap>
+
+    <select id="findAllUserAndOrders" resultMap="userMap">
+        select u.*,o.id oid,o.ordertime ,o.total from user u
+        left join orders o
+        on u.user_id = o.uid
+</select>
+
+
+<!--    映射通过用户id查询用户信息-->
+    <select id="findUserByIdqt" parameterType="int" resultType="user">
+        select * from user where user_id = #{uid}
+    </select>
+
+<!--    开启局部懒加载-->
+    <resultMap id="userMap1" type="user">
+        <id column="user_id" property="userId"/>
+        <result column="user_name" property="userName"/>
+        <result property="birthday" column="birthday"/>
+        <result property="sex" column="sex"/>
+        <result property="address" column="address"/>
+<!--        lazy懒加载，eager立即加载-->
+        <collection property="listOrders" javaType="orders" select="com.michilay.dao.OrdersMapper.findOrderbyUid" column="userId" fetchType="lazy">
+        </collection>
+    </resultMap>
+
+    <select id="findAllUserqt" resultMap="userMap1">
+        select * from User
+    </select>
+
+    <resultMap id="userAndRoleMap" type="user">
+        <id column="user_id" property="userId"/>
+        <result column="user_name" property="userName"/>
+        <result property="birthday" column="birthday"/>
+        <result property="sex" column="sex"/>
+        <result property="address" column="address"/>
+        <collection property="roleList" column="id" ofType="role" select="com.michilay.dao.RoleMapper.findByUid">
+        </collection>
+    </resultMap>
+
+    <select id="findAllWithRole" resultMap="userAndRoleMap">
+        select * from user
+    </select>
+</mapper>
+

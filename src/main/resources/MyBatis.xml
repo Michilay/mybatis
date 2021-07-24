@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+    <!--    导入外部的资源文件-->
+    <properties resource="jdbc.properties"/>
+    <!--    延迟加载-->
+    <settings>
+<!--        设置延迟加载的方法-->
+        <setting name="lazyLoadTriggerMethods" value="toString()"/>
+<!--        开启全局延迟加载功能-->
+        <setting name="lazyLoadingEnabled" value="true"/>
+    </settings>
+    
+    
+    <typeAliases>
+        <package name="com.michilay.entity"/>
+        <package name="com.michilay.dao"/>
+    </typeAliases>
+
+
+
+<!--    导入plugins插件-->
+    <plugins>
+<!--        拦截器-->
+        <plugin interceptor="com.github.pagehelper.PageHelper">
+<!--            指定方言-->
+            <property name="dialect" value="mysql"/>
+        </plugin>
+
+    </plugins>
+
+
+
+
+    <!--    配置数据库的环境-->
+    <environments default="mysql">
+        <environment id="mysql">
+            <!--            使用jdbc数据管理-->
+            <transactionManager type="JDBC"></transactionManager>
+            <dataSource type="POOLED">
+                <property name="driver" value="${jdbc.driver}"/>
+                <property name="url" value="${jdbc.url}"/>
+                <property name="username" value="${jdbc.username}"/>
+                <property name="password" value="${jdbc.password}"/>
+
+            </dataSource>
+        </environment>
+
+    </environments>
+
+    <!--    导入映射文件-->
+    <mappers>
+        <package name="com.michilay.dao"/>
+    </mappers>
+
+</configuration>
